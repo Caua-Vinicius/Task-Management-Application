@@ -22,7 +22,7 @@ export class TaskController {
     @Headers('user_id') user_id: string,
   ): Promise<TaskInterface[]> {
     try {
-      const tasks = this.taskService.listAllTasksbyUserId(user_id);
+      const tasks = await this.taskService.listAllTasksbyUserId(user_id);
       return tasks;
     } catch (error) {
       console.error('Error tasks/>' + error);
