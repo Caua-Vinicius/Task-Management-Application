@@ -62,7 +62,9 @@ export class TaskController {
       }
       return { success };
     } catch (error) {
-      console.error('Error updating task status for ID ${id}' + error);
+      console.error(
+        `Error updating task status for ID ${id}': ${error.message}`,
+      );
       throw new HttpException(
         'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,
