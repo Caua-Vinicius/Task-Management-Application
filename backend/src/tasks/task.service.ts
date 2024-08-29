@@ -3,6 +3,7 @@ import { CreateTaskDto } from './dto/createTaskDto';
 import { PrismaService } from 'prisma/prisma.service';
 import { TaskInterface } from './interfaces/task.interface';
 import { UpdateTaskStatusDto } from './dto/updateTaskStatusDto';
+import { UpdateTaskDto } from './dto/updateTaskDto';
 
 @Injectable()
 export class TaskService {
@@ -46,6 +47,25 @@ export class TaskService {
     } catch (error) {
       console.error('Error updating task status: ', error);
       return false;
+    }
+  }
+
+  async updateTask(
+    id: string,
+    updateTaskDto: UpdateTaskDto,
+  ): Promise<TaskInterface> {
+    try {
+      const updatedTask = await this.prisma.task.update({
+        where: { id: id },
+        data: {
+          title: updateTaskDto.title,
+          description: updateTaskDto.description,
+        },
+      });
+      return updatedTask;
+    } catch (error) {
+      console.error('Error updating task status: ', error);
+      return null;
     }
   }
 }

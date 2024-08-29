@@ -8,11 +8,13 @@ import {
   Param,
   HttpException,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/createTaskDto';
 import { TaskInterface } from './interfaces/task.interface';
 import { UpdateTaskStatusDto } from './dto/updateTaskStatusDto';
+import { UpdateTaskDto } from './dto/updateTaskDto';
 
 @Controller('tasks')
 export class TaskController {
@@ -61,6 +63,29 @@ export class TaskController {
       return { success };
     } catch (error) {
       console.error('Error updating task status for ID ${id}' + error);
+      throw new HttpException(
+        'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch(':id/update')
+  async updateTask(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+  ): Promise<{ success: boolean }> {
+    try {
+      const success = await this.taskService.updateTask(id, updateTaskDto);
+      if (!success) {
+        throw new HttpException(
+          'Failed to update task',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return { success: true };
+    } catch (error) {
+      console.error(`Error updating task for ID ${id}: ${error.message}`);
       throw new HttpException(
         'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,
