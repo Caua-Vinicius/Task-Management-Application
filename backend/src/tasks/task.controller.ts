@@ -9,6 +9,7 @@ import {
   HttpException,
   HttpStatus,
   ParseUUIDPipe,
+  Delete,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/createTaskDto';
@@ -88,6 +89,37 @@ export class TaskController {
       return { success: true };
     } catch (error) {
       console.error(`Error updating task for ID ${id}: ${error.message}`);
+      throw new HttpException(
+        'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete(':id/delete')
+  async deleteTask(
+    @Param('id') id: string,
+    @Headers('user_id') userId: string,
+  ): Promise<TaskInterface> {
+    try {
+      const taskExists = await this.taskService.doesTaskExist(id, userId);
+      if (!taskExists) {
+        throw new HttpException(
+          'Task not found or not authorized',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const deletedTask = await this.taskService.deleteTask(id);
+      if (!deletedTask) {
+        throw new HttpException(
+          'Failed to delete task',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return deletedTask;
+    } catch (error) {
+      console.error(`Error deleting task for ID ${id}: ${error.message}`);
       throw new HttpException(
         'Internal Server Error',
         HttpStatus.INTERNAL_SERVER_ERROR,
