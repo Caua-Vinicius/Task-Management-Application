@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateTaskDto } from './dto/createTaskDto';
 import { PrismaService } from 'prisma/prisma.service';
 import { TaskInterface } from './interfaces/task.interface';
+import { UpdateTaskStatusDto } from './dto/updateTaskStatusDto';
 
 @Injectable()
 export class TaskService {
@@ -28,6 +29,23 @@ export class TaskService {
     } catch (error) {
       console.error('Error fetching tasks: ' + error);
       return null;
+    }
+  }
+
+  async updateTaskStatus(
+    taskId: string,
+    status: UpdateTaskStatusDto,
+  ): Promise<boolean> {
+    try {
+      await this.prisma.task.update({
+        where: { id: taskId },
+        data: { completed: status.completed },
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating task status: ', error);
+      return false;
     }
   }
 }

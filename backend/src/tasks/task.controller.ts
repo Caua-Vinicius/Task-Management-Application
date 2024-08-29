@@ -1,7 +1,18 @@
-import { Body, Controller, Post, Headers, Get } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Headers,
+  Get,
+  Patch,
+  Param,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/createTaskDto';
 import { TaskInterface } from './interfaces/task.interface';
+import { UpdateTaskStatusDto } from './dto/updateTaskStatusDto';
 
 @Controller('tasks')
 export class TaskController {
@@ -28,6 +39,32 @@ export class TaskController {
     } catch (error) {
       console.error('Error tasks/>' + error);
       return [];
+    }
+  }
+
+  @Patch(':id/status')
+  async updateTaskStatus(
+    @Param('id') id: string,
+    @Body() updateTaskStatusDto: UpdateTaskStatusDto,
+  ): Promise<{ success: boolean }> {
+    try {
+      const success = await this.taskService.updateTaskStatus(
+        id,
+        updateTaskStatusDto,
+      );
+      if (!success) {
+        throw new HttpException(
+          'Failed to update task status',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return { success };
+    } catch (error) {
+      console.error('Error updating task status for ID ${id}' + error);
+      throw new HttpException(
+        'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }
