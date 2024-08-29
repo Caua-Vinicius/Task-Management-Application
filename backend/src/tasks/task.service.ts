@@ -9,8 +9,7 @@ export class TaskService {
 
   async createTask(createTaskDto: CreateTaskDto): Promise<TaskInterface> {
     try {
-      // corrigir o await aqui depois
-      const task = this.prisma.task.create({ data: createTaskDto });
+      const task = await this.prisma.task.create({ data: createTaskDto });
       return task;
     } catch (error) {
       console.error('Error creating task: ' + error);
