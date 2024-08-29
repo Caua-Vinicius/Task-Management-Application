@@ -9,6 +9,22 @@ import { UpdateTaskDto } from './dto/updateTaskDto';
 export class TaskService {
   constructor(private prisma: PrismaService) {}
 
+  async doesTaskExist(taskId: string, userId: string): Promise<boolean> {
+    try {
+      const task = await this.prisma.task.findFirst({
+        where: {
+          id: taskId,
+          userId: userId,
+        },
+      });
+
+      return !!task;
+    } catch (error) {
+      console.error('Error checking if task exists: ', error.message);
+      throw new Error('Could not verify task existence');
+    }
+  }
+
   async createTask(createTaskDto: CreateTaskDto): Promise<TaskInterface> {
     try {
       const task = await this.prisma.task.create({ data: createTaskDto });
@@ -65,6 +81,20 @@ export class TaskService {
       return updatedTask;
     } catch (error) {
       console.error('Error updating task status: ', error);
+      return null;
+    }
+  }
+
+  async deleteTask(taskId: string): Promise<TaskInterface> {
+    try {
+      const taskDeleted = await this.prisma.task.delete({
+        where: {
+          id: taskId,
+        },
+      });
+      return taskDeleted;
+    } catch (error) {
+      console.error('Error deleting task: ', error);
       return null;
     }
   }
