@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Headers } from '@nestjs/common';
+import { Body, Controller, Post, Headers, Get } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/createTaskDto';
 import { TaskInterface } from './interfaces/task.interface';
@@ -17,11 +17,12 @@ export class TaskController {
     }
   }
 
-  @Post('')
-  async getAllUsertasks(
-    @Headers('user_id') user_id: string,
-  ): Promise<TaskInterface[]> {
+  @Get('')
+  async getAllUserTasks(@Headers('user_id') user_id: string) {
     try {
+      if (!user_id) {
+        return { message: 'User not provided' };
+      }
       const tasks = await this.taskService.listAllTasksbyUserId(user_id);
       return tasks;
     } catch (error) {
