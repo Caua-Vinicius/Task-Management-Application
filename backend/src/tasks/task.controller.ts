@@ -25,32 +25,66 @@ export class TaskController {
   async create(@Body() createTaskDto: CreateTaskDto): Promise<TaskInterface> {
     try {
       const task = await this.taskService.createTask(createTaskDto);
+      if (!task) {
+        throw new HttpException(
+          'Failed to Create task',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
       return task;
     } catch (error) {
-      console.error('Error tasks/create>' + error);
+      console.error(`Error creating task: ${error.message}`);
+      throw new HttpException(
+        'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Get('')
-  async getAllUserTasks(@Headers('user_id') user_id: string) {
+  async getAllUserTasks(
+    @Headers('user_id') user_id: string,
+  ): Promise<TaskInterface[]> {
     try {
       if (!user_id) {
-        return { message: 'User not provided' };
+        throw new HttpException('User ID not provided', HttpStatus.BAD_REQUEST);
       }
       const tasks = await this.taskService.listAllTasksbyUserId(user_id);
+      if (!tasks) {
+        throw new HttpException(
+          'Failed to fetch tasks',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
       return tasks;
     } catch (error) {
-      console.error('Error tasks/>' + error);
-      return [];
+      console.error(
+        `Error fetching tasks for user ID ${user_id}: ${error.message}`,
+      );
+      throw new HttpException(
+        'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @Patch(':id/status')
   async updateTaskStatus(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTaskStatusDto: UpdateTaskStatusDto,
+    @Headers('user_id') userId: string,
   ): Promise<{ success: boolean }> {
     try {
+      const taskExists = await this.taskService.validateTaskOwnership(
+        id,
+        userId,
+      );
+      if (!taskExists) {
+        throw new HttpException(
+          'Task not found or not authorized',
+          HttpStatus.NOT_FOUND,
+        );
+      }
       const success = await this.taskService.updateTaskStatus(
         id,
         updateTaskStatusDto,
@@ -77,8 +111,19 @@ export class TaskController {
   async updateTask(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateTaskDto: UpdateTaskDto,
+    @Headers('user_id') userId: string,
   ): Promise<{ success: boolean }> {
     try {
+      const taskExists = await this.taskService.validateTaskOwnership(
+        id,
+        userId,
+      );
+      if (!taskExists) {
+        throw new HttpException(
+          'Task not found or not authorized',
+          HttpStatus.NOT_FOUND,
+        );
+      }
       const success = await this.taskService.updateTask(id, updateTaskDto);
       if (!success) {
         throw new HttpException(
@@ -102,7 +147,14 @@ export class TaskController {
     @Headers('user_id') userId: string,
   ): Promise<TaskInterface> {
     try {
-      const taskExists = await this.taskService.doesTaskExist(id, userId);
+      if (!userId) {
+        throw new HttpException('User ID not provided', HttpStatus.BAD_REQUEST);
+      }
+
+      const taskExists = await this.taskService.validateTaskOwnership(
+        id,
+        userId,
+      );
       if (!taskExists) {
         throw new HttpException(
           'Task not found or not authorized',

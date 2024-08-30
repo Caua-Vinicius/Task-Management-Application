@@ -9,7 +9,10 @@ import { UpdateTaskDto } from './dto/updateTaskDto';
 export class TaskService {
   constructor(private prisma: PrismaService) {}
 
-  async doesTaskExist(taskId: string, userId: string): Promise<boolean> {
+  async validateTaskOwnership(
+    taskId: string,
+    userId: string,
+  ): Promise<boolean> {
     try {
       const task = await this.prisma.task.findFirst({
         where: {
