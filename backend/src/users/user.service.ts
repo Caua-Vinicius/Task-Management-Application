@@ -1,15 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { CreateUserDto } from './dto/createUserDto';
-import { AuthService } from 'src/auth/auth.service';
 import { UserInterface } from './interfaces/user.interface';
 
 @Injectable()
 export class UserService {
-  constructor(
-    private prisma: PrismaService,
-    private authService: AuthService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async checkUserExistance(email: string): Promise<boolean> {
     try {
@@ -23,20 +18,30 @@ export class UserService {
     }
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<UserInterface> {
+  async findOneById(userId: string): Promise<UserInterface> {
     try {
-      const passwordHashed = await this.authService.hashPassword(
-        createUserDto.password.toString(),
-      );
-      const user = await this.prisma.user.create({
-        data: {
-          email: createUserDto.email,
-          password_hash: passwordHashed,
+      const user = await this.prisma.user.findFirst({
+        where: {
+          id: userId,
         },
       });
       return user;
     } catch (error) {
-      console.error('Error creating user: ' + error.message);
+      console.error('Error fetching user: ' + error.message);
+      return null;
+    }
+  }
+
+  async findOneByEmail(email: string): Promise<UserInterface> {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: {
+          email: email,
+        },
+      });
+      return user;
+    } catch (error) {
+      console.error('Error fetching user: ' + error.message);
       return null;
     }
   }
