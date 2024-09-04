@@ -2,28 +2,40 @@ import {
   Body,
   Controller,
   Post,
-  Headers,
   Get,
   Patch,
   Param,
   HttpException,
   HttpStatus,
-  ParseUUIDPipe,
   Delete,
+  Req,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/createTaskDto';
 import { TaskInterface } from './interfaces/task.interface';
 import { UpdateTaskStatusDto } from './dto/updateTaskStatusDto';
 import { UpdateTaskDto } from './dto/updateTaskDto';
+import { UserInfoRequest } from './interfaces/reqUserInfo';
+import { CreateTaskWithoutUserDto } from './dto/createTaskWithoutUserDto';
 
 @Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Post('create')
-  async create(@Body() createTaskDto: CreateTaskDto): Promise<TaskInterface> {
+  async create(
+    @Body() createTaskWithoutUserDto: CreateTaskWithoutUserDto,
+    @Req() req: UserInfoRequest,
+  ): Promise<TaskInterface> {
     try {
+      const userId: string = req['user_id'];
+      if (!userId) {
+        throw new HttpException('User ID not provided', HttpStatus.BAD_REQUEST);
+      }
+      const createTaskDto: CreateTaskDto = {
+        ...createTaskWithoutUserDto,
+        userId,
+      };
       const task = await this.taskService.createTask(createTaskDto);
       if (!task) {
         throw new HttpException(
@@ -42,10 +54,9 @@ export class TaskController {
   }
 
   @Get('')
-  async getAllUserTasks(
-    @Headers('user_id') user_id: string,
-  ): Promise<TaskInterface[]> {
+  async getAllUserTasks(@Req() req: UserInfoRequest): Promise<TaskInterface[]> {
     try {
+      const user_id: string = req['user_id'];
       if (!user_id) {
         throw new HttpException('User ID not provided', HttpStatus.BAD_REQUEST);
       }
@@ -59,7 +70,7 @@ export class TaskController {
       return tasks;
     } catch (error) {
       console.error(
-        `Error fetching tasks for user ID ${user_id}: ${error.message}`,
+        `Error fetching tasks for user ID ${req['user_id']}: ${error.message}`,
       );
       throw new HttpException(
         'Internal Server Error',
@@ -70,11 +81,12 @@ export class TaskController {
 
   @Patch(':id/status')
   async updateTaskStatus(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() updateTaskStatusDto: UpdateTaskStatusDto,
-    @Headers('user_id') userId: string,
+    @Req() req: UserInfoRequest,
   ): Promise<{ success: boolean }> {
     try {
+      const userId = req['user_id'];
       const taskExists = await this.taskService.validateTaskOwnership(
         id,
         userId,
@@ -109,11 +121,12 @@ export class TaskController {
 
   @Patch(':id/update')
   async updateTask(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
-    @Headers('user_id') userId: string,
+    @Req() req: UserInfoRequest,
   ): Promise<{ success: boolean }> {
     try {
+      const userId = req['user_id'];
       const taskExists = await this.taskService.validateTaskOwnership(
         id,
         userId,
@@ -144,9 +157,10 @@ export class TaskController {
   @Delete(':id/delete')
   async deleteTask(
     @Param('id') id: string,
-    @Headers('user_id') userId: string,
+    @Req() req: UserInfoRequest,
   ): Promise<TaskInterface> {
     try {
+      const userId = req['user_id'];
       if (!userId) {
         throw new HttpException('User ID not provided', HttpStatus.BAD_REQUEST);
       }
