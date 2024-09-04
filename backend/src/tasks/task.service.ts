@@ -30,7 +30,13 @@ export class TaskService {
 
   async createTask(createTaskDto: CreateTaskDto): Promise<TaskInterface> {
     try {
-      const task = await this.prisma.task.create({ data: createTaskDto });
+      const task = await this.prisma.task.create({
+        data: {
+          title: createTaskDto.title,
+          description: createTaskDto.description,
+          userId: createTaskDto.userId,
+        },
+      });
       return task;
     } catch (error) {
       console.error('Error creating task: ' + error);
